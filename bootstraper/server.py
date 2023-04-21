@@ -66,7 +66,7 @@ def initializeMe():
         graph[node].add(given_id)
 
     # to send whole database and nodes a,b
-
+    print('updated graph is:')
     print(graph)
 
     toSend = {'database':alive_node_address,'responsibility':random_selected_nodes, 'node_id':given_id}
@@ -89,12 +89,8 @@ def nodeFailed():
 
 
     # remove failed node from db
-    print("monty",graph)
-    print("am",graph[node_id])
-
     for x in graph[node_id]:
         graph[x].remove(node_id)
-        print(graph)
         
         
         # check if one responsible then make more responsible
@@ -104,9 +100,7 @@ def nodeFailed():
             a = choice(list(alive_node_address.keys()))
             
             while a == x or a == node_id or (a in graph[x]):
-                print(type(a),type(x),type(node_id),a,x,node_id)
                 a = choice(list(alive_node_address.keys()))
-            print(type(a),type(x),type(node_id),a,x,node_id)
             # give responsiblity of atoi and vice versa
             url = f'http://{alive_node_address[a]["ip"]}:{alive_node_address[a]["port"]}/takeResponsibility'
             data = {
@@ -114,7 +108,6 @@ def nodeFailed():
                 'ip':alive_node_address[x]["ip"],
                 'port':alive_node_address[x]["port"],
             }
-            print("3")
 
             try:
                 res = requests.post(url,json = data)
@@ -128,7 +121,6 @@ def nodeFailed():
                 'ip':alive_node_address[a]["ip"],
                 'port':alive_node_address[a]["port"],
             }
-            print("4")
 
             graph[x].add(a)
             graph[a].add(x)
@@ -140,12 +132,12 @@ def nodeFailed():
                 print(f'node {alive_node_address[x]["ip"]}:{alive_node_address[x]["port"]} is failed or some error occured : cannot connect')
 
     del graph[node_id]
-    
 
+    print('graph after deleting node',node_id)
+    print(graph)
     return "ok"
 
 
 
 if __name__ == '__main__':
-    print("ayush")
     app.run(debug=False, port=8000)
