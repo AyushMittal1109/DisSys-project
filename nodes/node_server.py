@@ -69,6 +69,7 @@ def enter_CS():
     color = fg('green')
     print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :entering CS",get_my_local_clock())
     
+    print(color, "INSIDE CS")
     time.sleep(10)
     
     print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :exiting CS",get_my_local_clock())
@@ -506,31 +507,66 @@ def NonCS():
     '''
     set_Requesting_CS(0)
     set_Executing_CS(0)    
-    print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :entering NCS",get_my_local_clock())
+    print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :entering NCS")
     randomtime=random.randint(0,3)
     time.sleep(randomtime)
     set_Executing_CS(0)
     set_Requesting_CS(0)
+
+
+@app.route('/shutdown',methods = ['POST'])
+def shutdown():
+    terminate = request.environ.get('werkzeug.server.shutdown')
+    if terminate is None:
+        raise RuntimeError('cannot stop server')
+    terminate()
+    return 'ok'
+
+def end_process():
+
+    global finished
+    finished = True
+
+    broadcast_NodeFailed()
+
+    time.sleep(5)
+
+    requests.post(f"http://{my_ip}:{my_port}/shutdown")
+
     
+    
+
+def my_task_Process0():
+    time.sleep(2) #sleep added to make sure by that time all 4 process's server become alive
+    CS()
+    NonCS()
+    CS()
+    CS()
+    NonCS()
+    CS()
+    NonCS()
+    CS()
+    end_process()
 
 def my_task_Process1():
     time.sleep(2) #sleep added to make sure by that time all 4 process's server become alive
     CS()
+    CS()
+    NonCS()
     NonCS()
     CS()
     CS()
+    CS()
+    NonCS()
     NonCS()
     CS()
     NonCS()
     CS()
-    global finished
-    finished = True
+    end_process()
 
 def my_task_Process2():
     time.sleep(2) #sleep added to make sure by that time all 4 process's server become alive
     CS()
-    CS()
-    NonCS()
     NonCS()
     CS()
     CS()
@@ -540,32 +576,16 @@ def my_task_Process2():
     CS()
     NonCS()
     CS()
-    global finished
-    finished = True
+    NonCS()
+    CS()
+    NonCS()
+    CS()
+    end_process()
 
 def my_task_Process3():
     time.sleep(2) #sleep added to make sure by that time all 4 process's server become alive
     CS()
     NonCS()
-    CS()
-    CS()
-    CS()
-    NonCS()
-    NonCS()
-    CS()
-    NonCS()
-    CS()
-    NonCS()
-    CS()
-    NonCS()
-    CS()
-    global finished
-    finished = True
-
-def my_task_Process4():
-    time.sleep(2) #sleep added to make sure by that time all 4 process's server become alive
-    CS()
-    NonCS()
     NonCS()
     CS()
     CS()
@@ -578,8 +598,7 @@ def my_task_Process4():
     CS()
     NonCS()
     CS()
-    global finished
-    finished = True
+    end_process()
 
 def get_free_port(my_ip,my_port):
     '''
@@ -759,7 +778,7 @@ def broadcast_helper(ip,port):
 
         
 
-def broadcast():
+def broadcast_newNode():
 
     threads = []
     for node_id in alive_node_address.keys():
@@ -772,6 +791,22 @@ def broadcast():
     for t in threads:
         t.join()
 
+
+def broadcast_NodeFailed():
+    threads = []
+    for node_id in list(alive_node_address.keys()):
+        if node_id == my_process_id : 
+            continue
+        t = threading.Thread(target=tell_node_x_failed, args = (alive_node_address[node_id]["ip"],alive_node_address[node_id]["port"], my_process_id))
+        threads.append(t)
+        t.start()
+    
+    t = threading.Thread(target=tell_node_x_failed, args = (sys.argv[3],sys.argv[4], my_process_id))
+    threads.append(t)
+    t.start()
+
+    for t in threads:
+        t.join()
 
 
 
@@ -815,7 +850,7 @@ if __name__ == '__main__':
     '''
 
     # broadcast own to all
-    broadcast()
+    broadcast_newNode()
 
     finished = False
 
@@ -825,18 +860,14 @@ if __name__ == '__main__':
    
     
 
-    if (int(my_process_id))%4 + 1 == 1:
+    if (int(my_process_id))%4 == 0:
+        start_new_thread(my_task_Process0, ())
+    elif (int(my_process_id))%4 == 1:
         start_new_thread(my_task_Process1, ())
-    elif (int(my_process_id))%4 + 1 == 2:
+    elif (int(my_process_id))%4 == 2:
         start_new_thread(my_task_Process2, ())
-    elif (int(my_process_id))%4 + 1 == 3:
+    elif (int(my_process_id))%4 == 3:
         start_new_thread(my_task_Process3, ())
-    elif (int(my_process_id))%4 + 1 == 4:
-        start_new_thread(my_task_Process4, ())
-    else:
-        # start_new_thread(my_task_Process4, ())
-        
-        print(color, "Error process id not mathced to any existing code")
     
     
 
