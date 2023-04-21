@@ -1,12 +1,12 @@
 from flask import Flask, request
-import json
+import json, sys
 from random import sample,choice
 import requests
 
 app = Flask(__name__)
 
 alive_node_address = {}
-responsibleFor = {}
+responsibleFor = set()
 
 
 @app.route('/')
@@ -32,5 +32,10 @@ def
 
 
 if __name__ == '__main__':
-    print("ayush")
+    url = f'{sys.argv[1]}:{sys.argv[2]}/takeResponsiblity'
+    x = requests.post(url,json = data)
+
+    alive_node_address = x["database"]
+    responsibleFor = x["responsiblity"]
+
     app.run(debug=True, port=8001)

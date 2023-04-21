@@ -25,14 +25,14 @@ def entry_point():
 
 @app.route('/initializeMe',methods = ['POST','GET'])
 def initializeMe():
-
+    
     global new_node_id
 
-    # ip = request.remote_addr
-    # port = str(request.environ['REMOTE_PORT'])
+    new_node_data = request.json
 
-    ip = request.args.get("ip")
-    port = request.args.get("port")
+    ip = new_node_data['ip']
+    port = new_node_data['port']
+
 
     # choose any two nodes
     try:
@@ -40,18 +40,20 @@ def initializeMe():
     except:
         random_selected_nodes = list(alive_node_address.keys())
 
-    print(random_selected_nodes)
+
     # random_selected_nodes
     # adding node to alive nodes
-    alive_node_address[new_node_id] = {'ip':ip,
-                                 'port':port}
-    new_node_id += 1
 
-    # telling node a,b to take responsiblity of node i
+    given_id = str(new_node_id)
+    new_node_id += 1
+    alive_node_address[given_id] = {'ip':ip,
+                                 'port':port}
+    
+    # telling node a,b to take responsibility of node i
     for node in random_selected_nodes:
-        url = f'{alive_node_address[node]["ip"]}:{alive_node_address[node]["port"]}/takeResponsiblity'
+        url = f'http://{alive_node_address[node]["ip"]}:{alive_node_address[node]["port"]}/takeResponsibility'
         data = {
-            'id':new_node_id-1,
+            'id':given_id,
             'ip':ip,
             'port':port,
         }
@@ -59,65 +61,86 @@ def initializeMe():
 
 
     # make changes in map
-    graph[new_node_id-1]=set(random_selected_nodes)
+    graph[given_id]=set(random_selected_nodes)
     for node in random_selected_nodes:
-        graph[node].add(new_node_id-1)
+        graph[node].add(given_id)
 
     # to send whole database and nodes a,b
 
-    toSend = {'database':alive_node_address,'responsiblity':random_selected_nodes}
+    print(graph)
 
+    toSend = {'database':alive_node_address,'responsibility':random_selected_nodes, 'node_id':given_id}
+    
+    
     return json.dumps(toSend)
 
 
-@app.route('/nodeFailed',methods = ['POST','GET'])
+@app.route('/node_x_failed',methods = ['POST','GET'])
 def nodeFailed():
     failed_node_data = request.json
-    node_id = failed_node_data['id']
+    node_id = failed_node_data['node_id']
 
-    # manage responsiblity taken by failed node
+    # manage responsibility taken by failed node
+    try:
+        del alive_node_address[node_id]
+    except:
+        return 'ok'
 
 
 
     # remove failed node from db
+    print("monty",graph)
+    print("am",graph[node_id])
+
     for x in graph[node_id]:
         graph[x].remove(node_id)
+        print(graph)
+        
+        
         # check if one responsible then make more responsible
-        if len(graph[x]) == 1 and len(graph.keys())>1:
+        if len(graph[x]) == 1 and len(graph.keys())>3:
             # find any random node and make them responsible for each other
-            a = choice(alive_node_address.keys())
-            while a == x:
-                a = choice(alive_node_address.keys())
 
+            a = choice(list(alive_node_address.keys()))
+            
+            while a == x or a == node_id or (a in graph[x]):
+                print(type(a),type(x),type(node_id),a,x,node_id)
+                a = choice(list(alive_node_address.keys()))
+            print(type(a),type(x),type(node_id),a,x,node_id)
             # give responsiblity of atoi and vice versa
-            url = f'{alive_node_address[a]["ip"]}:{alive_node_address[a]["port"]}/takeResponsiblity'
+            url = f'http://{alive_node_address[a]["ip"]}:{alive_node_address[a]["port"]}/takeResponsibility'
             data = {
-                'id':node_id,
-                'ip':alive_node_address[node_id]["ip"],
-                'port':alive_node_address[node_id]["port"],
+                'id':x,
+                'ip':alive_node_address[x]["ip"],
+                'port':alive_node_address[x]["port"],
             }
-            x = requests.post(url,json = data)
+            print("3")
 
-            url = f'{alive_node_address[node_id]["ip"]}:{alive_node_address[node_id]["port"]}/takeResponsiblity'
+            try:
+                res = requests.post(url,json = data)
+            except:
+                print(f'node {alive_node_address[x]["ip"]}:{alive_node_address[x]["port"]} is failed or some error occured : cannot connect')
+
+
+            url = f'http://{alive_node_address[x]["ip"]}:{alive_node_address[x]["port"]}/takeResponsibility'
             data = {
                 'id':a,
                 'ip':alive_node_address[a]["ip"],
                 'port':alive_node_address[a]["port"],
             }
-            graph[node_id].add(a)
-            graph[a].add(node_id)
+            print("4")
+
+            graph[x].add(a)
+            graph[a].add(x)
             
 
-
-            x = requests.post(url,json = data)
+            try:
+                res = requests.post(url,json = data)
+            except:
+                print(f'node {alive_node_address[x]["ip"]}:{alive_node_address[x]["port"]} is failed or some error occured : cannot connect')
 
     del graph[node_id]
-    del alive_node_address[node_id]
-
-
-
-
-
+    
 
     return "ok"
 
@@ -125,4 +148,4 @@ def nodeFailed():
 
 if __name__ == '__main__':
     print("ayush")
-    app.run(debug=True, port=8000)
+    app.run(debug=False, port=8000)
