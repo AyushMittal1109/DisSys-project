@@ -875,7 +875,6 @@ if __name__ == '__main__':
     my_port=sys.argv[2]
     my_port=str(get_free_port(my_ip,my_port))
 
-    print("checking ip",my_ip,my_port)
     '''
         Code to send information to bootstrapper,here
     '''
@@ -890,7 +889,7 @@ if __name__ == '__main__':
 
     # //////////////////////////
     res = requests.post(f'http://{bootstrapper_ip}:{bootstrapper_port}/initializeMe', json = data)
-    print(color, "Ayush",res.text)
+    print(color,res.text)
     res = json.loads(res.text)
 
     
