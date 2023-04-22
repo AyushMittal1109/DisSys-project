@@ -53,7 +53,7 @@ def initializeMe():
     # adding node to alive nodes
 
     given_id = str(new_node_id)
-    log("NEW NODE "+given_id+" "+ip+" "+port)
+    log("INFO\tNEW NODE "+given_id+" "+ip+" "+port)
 
     new_node_id += 1
     alive_node_address[given_id] = {'ip':ip,
@@ -93,7 +93,7 @@ def nodeFailed():
     # manage responsibility taken by failed node
     try:
         del alive_node_address[node_id]
-        log("NODE STOPPED "+node_id)
+        log("INFO\tNODE STOPPED "+node_id)
     except:
         return 'ok'
 

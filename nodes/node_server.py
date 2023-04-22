@@ -85,11 +85,13 @@ def enter_CS():
     global color
     color = fg('green')
     print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :entering CS",get_my_local_clock())
-    
     print(color, "INSIDE CS")
-    time.sleep(10)
+
+
+    for i in range(10):
+        time.sleep(1)
+        print(color,"EXECUTING CS")
     
-    print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :exiting CS",get_my_local_clock())
     
     f=open('CS_logs.txt','a')
     f.write("["+str(my_process_id)+","+str(get_my_local_clock())+","+str(get_Requesting_CS())+","+str(get_Executing_CS())+"] :exiting CS"+str(get_my_local_clock())+'\n')
@@ -155,15 +157,15 @@ def handle_recieved_Request():
     if requesting_process_id in got_permission_from:
         Ricard_status = False
 
-    log("REQ_RCV from process "+requesting_process_id)
+    log("INFO \tREQ_RCV from process "+requesting_process_id)
     if Ricard_status==True:
         print(color, "reply send to", requesting_process_ip ,requesting_process_port)
-        log("RPL_SEND to process "+requesting_process_id)
+        log("INFO \tRPL_SEND to process "+requesting_process_id)
         return "Continue Execution"
     
     else:
         print(color, "deferred send to", requesting_process_ip ,requesting_process_port)
-        log("RPL_DEF for process "+requesting_process_id)
+        log("INFO \tRPL_DEF for process "+requesting_process_id)
         temp=[requesting_process_ip,requesting_process_port,requesting_process_id,requesting_process_event_count]
         append_reply_defered_to(temp)
         '''
@@ -193,7 +195,7 @@ def send_request(Dest_id, Dest_ip,Dest_port,my_clock):
 
     response_holder = "Ayush"
     try:
-        log("REQ_SEND to process "+Dest_id)
+        log("INFO \tREQ_SEND to process "+Dest_id)
         response_holder = requests.post(Dest_Process + "RecieveRequest", json=send_info).content.decode('ascii')
     except:
         # TODO
@@ -223,7 +225,7 @@ def send_request(Dest_id, Dest_ip,Dest_port,my_clock):
     if response_holder=="Continue Execution":
         '''Request send to the process and recieved reply as well.'''
         # TODO
-        log("RPL_RCV from process "+Dest_id)
+        log("INFO \tRPL_RCV from process "+Dest_id)
         got_permission_from.add(Dest_id)
         # pass
         
@@ -300,7 +302,7 @@ def handle_nodes_failue(alive_processes):
                 found=True #process is alive
                 break
         if found==False: #process upon whom i am waiting is not in alive list means it is deleted.
-            log("NODE_FAILED process id "+process[2])
+            log("INFO \tNODE_FAILED process id "+process[2])
             Process_down_list.append(process)
 
     for process in Process_down_list:
@@ -369,7 +371,7 @@ def handle_nodes_addition(alive_processes):
             if Dest_ip==my_ip and Dest_port==my_port:
                 continue #don't send request to self
             else:
-                log(f"NODE_ADDED process {requested_process[2]} {requested_process[0]} {requested_process[1]}")
+                log(f"INFO \tNODE_ADDED process {requested_process[2]} {requested_process[0]} {requested_process[1]}")
                 send_request(Dest_id,Dest_ip,Dest_port,my_clock)
                 process = [Dest_ip,Dest_port,my_process_id,my_clock]
                 to_add.append(process)
@@ -400,7 +402,7 @@ def check_recieved_reply_from_everyone():
         
         print(color, "Stuck here",get_waiting_for_reply_from())
 
-        log("INFO waiting for" + str(get_waiting_for_reply_from()))
+        log("DEBUG\twaiting for" + str(get_waiting_for_reply_from()))
         time.sleep(1)
         update_node_alive_list()
         if len(get_waiting_for_reply_from())==0:
@@ -444,8 +446,8 @@ def handle_recieved_Rfeply():
             
             print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :eeerror",temp,get_waiting_for_reply_from())
         else:
-            log("RPL_RCV from process ",reply_from_process_id)
-            print("Received reply from",reply_from_ip,reply_from_port)
+            log("INFO \tRPL_RCV from process " + reply_from_process_id)
+            print(color, "Received reply from",reply_from_ip,reply_from_port)
 
         if len(get_waiting_for_reply_from())==0:#new
             set_Executing_CS(1)
@@ -487,7 +489,7 @@ def post_CS_send_reply():
         '''
         
         try:
-            log("RPL_SEND to process "+process[2])
+            log("INFO \tRPL_SEND to process "+process[2])
             response_holder = requests.post(Dest_Process + "RecieveReply", json=send_info).content.decode('ascii')
         
         except:
@@ -509,7 +511,7 @@ def CS():
         Send request to everyone(except self)
     '''
 
-    log("INFO Requesting for CS")
+    log("DEBUG\tRequesting for CS")
 
 
     for process in processes: 
@@ -518,21 +520,21 @@ def CS():
             continue 
         else:
             
-            print(color, process)
+            print(color,"sending request to ", process)
             send_request(process["process_id"], process['host'],process['port'],my_local_clock)
     
-    log("INFO CS Request sent to all nodes")
+    log("DEBUG\tCS Request sent to all nodes")
 
     '''Wait for Reply from everyone'''
     check_recieved_reply_from_everyone()
 
-    log("INFO Received reply from all nodes")
+    log("DEBUG\tReceived reply from all nodes")
     
     '''Code to actually enter CS'''
 
-    log("Entering CS")
+    log("INFO \tEntering CS")
     enter_CS()
-    log("Exiting CS")
+    log("INFO \tExiting CS")
     set_can_enter_CS(0)#can give deadlock
     set_Requesting_CS(0)
     '''send reply to all'''
@@ -545,13 +547,13 @@ def NonCS():
     '''
         Non Cs Part of the code
     '''
-    log("Entering NCS")
+    log("INFO \tEntering NCS")
     set_Requesting_CS(0)
     set_Executing_CS(0)    
     print(color, "[",my_process_id,",",get_my_local_clock(),",",get_Requesting_CS(),",",get_Executing_CS(),"] :entering NCS")
     randomtime=random.randint(0,3)
     time.sleep(randomtime)
-    log("Exiting NCS")
+    log("INFO \tExiting NCS")
     set_Executing_CS(0)
     set_Requesting_CS(0)
 
@@ -571,7 +573,7 @@ def end_process():
 
     broadcast_NodeFailed()
 
-    log("INFO Program Completed - Node Shutting down...")
+    log("DEBUG\tProgram Completed - Node Shutting down...")
 
 
     time.sleep(5)
@@ -674,6 +676,7 @@ def get_free_port(my_ip,my_port):
 def takeResponsibility():
     new_node = request.json
     new_responsibility.add(new_node['id'])
+    log("INFO \ttaking responsibility of "+new_node['id'])
     return 'ok'
 
 @app.route('/newNode',methods = ['POST','GET'])
@@ -900,8 +903,10 @@ if __name__ == '__main__':
 
     file = open("Node_"+my_process_id+".log","w")
     file.close()
-    log("contacting Bootstrapper, Node initializing")    
-    log("node initialized")
+    log("INFO \tcontacting Bootstrapper, Node initializing")    
+    log("INFO \tnode initialized")
+    log("INFO \tall alive nodes "+str(alive_node_address))
+    log("INFO \tresponsibility of" + str(responsibility_of))
 
     
     '''
