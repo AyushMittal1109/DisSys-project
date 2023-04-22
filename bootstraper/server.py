@@ -2,6 +2,7 @@ from flask import Flask, request
 import json
 from random import sample,choice
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -19,6 +20,14 @@ alive_node_address = {}
 # graph[i] = set(a,b,c) - node i is connected with node a,b,c
 graph = {}
 
+def log( m ):
+    file = open("BS.log","a")
+    date_str = str(datetime.now())
+    t = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S.%f')
+    # curr_t = time.strftime("%H:%M:%S.%f",t)
+    file.write(str(t)+ " " + m + "\n")
+    file.close()
+
 @app.route('/')
 def entry_point():
     return 'Hello World!'
@@ -33,7 +42,6 @@ def initializeMe():
     ip = new_node_data['ip']
     port = new_node_data['port']
 
-
     # choose any two nodes
     try:
         random_selected_nodes = sample(list(alive_node_address.keys()),random_node_count)
@@ -45,6 +53,8 @@ def initializeMe():
     # adding node to alive nodes
 
     given_id = str(new_node_id)
+    log("NEW NODE "+given_id+" "+ip+" "+port)
+
     new_node_id += 1
     alive_node_address[given_id] = {'ip':ip,
                                  'port':port}
@@ -83,6 +93,7 @@ def nodeFailed():
     # manage responsibility taken by failed node
     try:
         del alive_node_address[node_id]
+        log("NODE STOPPED "+node_id)
     except:
         return 'ok'
 
@@ -140,4 +151,7 @@ def nodeFailed():
 
 
 if __name__ == '__main__':
+
+    file = open("BS.log","w")
+    file.close()
     app.run(debug=False, port=8000)
