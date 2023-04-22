@@ -28,15 +28,17 @@ def dfs(u):
             dfs(node)
 
 def articulation_handler():
-
-    dfs(list(alive_node_address.keys)[0])
-    
-    if len(visited) == len(alive_node_address):
-        return []
-    
-    for node in alive_node_address.keys():
-        if node not in visited:
-            return [node, list(visited)[0]]
+    try:
+        dfs(list(alive_node_address.keys)[0])
+        
+        if len(visited) == len(alive_node_address):
+            return []
+        
+        for node in alive_node_address.keys():
+            if node not in visited:
+                return [node, list(visited)[0]]
+    except:
+        pass
 
 
 
