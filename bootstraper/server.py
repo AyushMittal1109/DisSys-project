@@ -20,6 +20,26 @@ alive_node_address = {}
 # graph[i] = set(a,b,c) - node i is connected with node a,b,c
 graph = {}
 
+visited = set()
+def dfs(u):
+    visited.add(u)
+    for node in graph[u]:
+        if node not in visited:
+            dfs(node)
+
+def articulation_handler():
+
+    dfs(list(alive_node_address.keys)[0])
+    
+    if len(visited) == len(alive_node_address):
+        return []
+    
+    for node in alive_node_address.keys():
+        if node not in visited:
+            return [node, list(visited)[0]]
+
+
+
 def log( m ):
     file = open("BS.log","a")
     date_str = str(datetime.now())
@@ -97,7 +117,8 @@ def nodeFailed():
     except:
         return 'ok'
 
-
+    visited.clear()
+    a = articulation_handler()
 
     # remove failed node from db
     for x in graph[node_id]:
@@ -144,6 +165,7 @@ def nodeFailed():
 
     del graph[node_id]
 
+
     print('graph after deleting node',node_id)
     print(graph)
     return "ok"
@@ -154,4 +176,4 @@ if __name__ == '__main__':
 
     file = open("BS.log","w")
     file.close()
-    app.run(debug=False, port=8000)
+    app.run(debug=False, port=8000, host = "0.0.0.0")

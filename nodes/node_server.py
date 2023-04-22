@@ -574,7 +574,7 @@ def end_process():
     broadcast_NodeFailed()
 
     log("DEBUG\tProgram Completed - Node Shutting down...")
-
+    print(color, "Program Completed - Node Shutting down...")
 
     time.sleep(5)
 
@@ -874,6 +874,8 @@ if __name__ == '__main__':
     my_ip=sys.argv[1]
     my_port=sys.argv[2]
     my_port=str(get_free_port(my_ip,my_port))
+
+    print("checking ip",my_ip,my_port)
     '''
         Code to send information to bootstrapper,here
     '''
